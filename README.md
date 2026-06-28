@@ -1,8 +1,8 @@
-# u-u-kontrol-paneli
+# Uçuş Kontrol Paneli
 
-**SkyTrace GCS** — İnsansız hava araçları için web tabanlı yer kontrol istasyonu ve telemetri arayüzü.
+Web tabanlı İHA yer kontrol istasyonu ve canlı telemetri arayüzü.
 
-Bu projede, çok rotorlu İHA platformları için uçtan uca bir kontrol ve izleme altyapısı geliştirdim. Amaç; otopilot ile operatör arasında düşük gecikmeli, güvenilir ve genişletilebilir bir haberleşme katmanı kurmak ve uçuş verilerini anlaşılır biçimde görselleştirmektir.
+Bu projede çok rotorlu insansız hava araçları için uçtan uca bir kontrol ve izleme altyapısı geliştirdim. Amaç; otopilot ile operatör arasında düşük gecikmeli, güvenilir ve genişletilebilir bir haberleşme katmanı kurmak ve uçuş verilerini anlaşılır biçimde görselleştirmektir.
 
 ## Projenin Amacı
 
@@ -17,7 +17,7 @@ Bu projede, çok rotorlu İHA platformları için uçtan uca bir kontrol ve izle
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│              SkyTrace GCS (Web Arayüzü)                 │
+│           Uçuş Kontrol Paneli (Web Arayüzü)               │
 │         Harita · Attitude · Batarya · Enerji            │
 └────────────────────────┬────────────────────────────────┘
                          │ MAVLink (UDP / SSE)
@@ -47,8 +47,8 @@ Bu projede, çok rotorlu İHA platformları için uçtan uca bir kontrol ve izle
 ## Proje Yapısı
 
 ```
-u-u-kontrol-paneli/
-├── dashboard/       # SkyTrace web arayüzü ve telemetri sunucusu
+ucus-kontrol-paneli/
+├── dashboard/       # Web arayüzü ve telemetri sunucusu
 ├── scripts/         # Kurulum, derleme ve çalıştırma betikleri
 ├── docs/            # Mimari ve geliştirme notları
 └── ardupilot/       # ArduPilot kaynak ağacı (SITL + özel kart tanımı)
@@ -66,8 +66,8 @@ u-u-kontrol-paneli/
 ### Adımlar
 
 ```bash
-git clone https://github.com/fatihasarmusakci/u-u-kontrol-paneli.git
-cd u-u-kontrol-paneli
+git clone https://github.com/fatihasarmusakci/ucus-kontrol-paneli.git
+cd ucus-kontrol-paneli
 
 # Bağımlılıklar + SITL derlemesi (ilk çalıştırmada birkaç dakika sürebilir)
 bash scripts/setup-env.sh
@@ -81,9 +81,9 @@ bash scripts/setup-env.sh
 bash scripts/start-panel.sh
 ```
 
-Tarayıcıda açılır: **http://localhost:8080**
+Tarayıcı otomatik açılır: **http://localhost:8080**
 
-Bu komut SITL simülasyonunu başlatır, MAVLink bağlantısını kurar ve SkyTrace arayüzünü ayağa kaldırır.
+Bu komut SITL simülasyonunu başlatır, MAVLink bağlantısını kurar ve kontrol panelini ayağa kaldırır.
 
 ### Yalnızca simülasyon
 
@@ -122,7 +122,7 @@ pip install -r dashboard/requirements.txt
 
 | Bileşen | Durum |
 |---------|--------|
-| Web kontrol paneli (SkyTrace GCS) | Çalışır durumda |
+| Web kontrol paneli | Çalışır durumda |
 | SITL simülasyon entegrasyonu | Çalışır durumda |
 | MAVLink telemetri akışı | Çalışır durumda |
 | Özgün FC firmware derlemesi | Derlenebilir |

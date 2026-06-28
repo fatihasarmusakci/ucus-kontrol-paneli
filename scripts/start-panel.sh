@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SkyTrace GCS — SITL simülasyonu ve web kontrol panelini tek komutla başlatır
+# Uçuş Kontrol Paneli — SITL simülasyonu ve web arayüzünü tek komutla başlatır
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -9,7 +9,7 @@ PORT="${GCS_PORT:-8080}"
 export PATH="$HOME/.pyenv/shims:$HOME/.pyenv/bin:/opt/homebrew/bin:$PATH"
 
 echo "=============================================="
-echo "  SkyTrace GCS — Yer Kontrol İstasyonu"
+echo "  Uçuş Kontrol Paneli"
 echo "=============================================="
 
 SITL_BIN="$PROJECT_ROOT/ardupilot/build/sitl/bin/arducopter"
@@ -21,16 +21,20 @@ fi
 python3 -m pip install -q -r "$PROJECT_ROOT/dashboard/requirements.txt" 2>/dev/null || \
     python3 -m pip install -q pymavlink aiohttp
 
+# Eski süreçleri temizle
 pkill -f "arducopter --model" 2>/dev/null || true
+lsof -ti:"$PORT" 2>/dev/null | xargs kill -9 2>/dev/null || true
 sleep 1
 
+PANEL_URL="http://localhost:$PORT/?t=$(date +%s)"
+
 echo ""
-echo "  Panel adresi: http://localhost:$PORT"
-echo "  (Tarayıcı birkaç saniye içinde açılacak)"
+echo "  Panel adresi: $PANEL_URL"
+echo "  Tarayıcı otomatik açılacak."
 echo ""
 
-(sleep 3 && open "http://localhost:$PORT" 2>/dev/null || \
- xdg-open "http://localhost:$PORT" 2>/dev/null || true) &
+(sleep 2 && open "$PANEL_URL" 2>/dev/null || \
+ xdg-open "$PANEL_URL" 2>/dev/null || true) &
 
 cd "$PROJECT_ROOT"
 export GCS_PORT="$PORT"

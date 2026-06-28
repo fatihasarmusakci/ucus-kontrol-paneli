@@ -9,7 +9,7 @@ TOOLCHAIN_DIR="$PROJECT_ROOT/tools/gcc-arm-none-eabi-10-2020-q4-major"
 
 export PATH="$HOME/.pyenv/shims:$HOME/.pyenv/bin:/opt/homebrew/bin:$PATH"
 
-echo "=== SkyTrace GCS — Ortam Kurulumu ==="
+echo "=== Uçuş Kontrol Paneli — Ortam Kurulumu ==="
 
 if ! command -v pyenv &>/dev/null; then
     echo "pyenv bulunamadı. Önce Python 3.10+ kurun."

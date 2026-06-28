@@ -238,7 +238,7 @@ function exportGpx() {
   const pts = localTrack.map(([lat, lon]) =>
     `    <trkpt lat="${lat}" lon="${lon}"><ele>0</ele><time>${new Date().toISOString()}</time></trkpt>`
   ).join('\n');
-  const gpx = `<?xml version="1.0"?><gpx version="1.1"><trk><name>SkyTrace</name><trkseg>\n${pts}\n</trkseg></trk></gpx>`;
+  const gpx = `<?xml version="1.0"?><gpx version="1.1"><trk><name>Ucus Kontrol Paneli</name><trkseg>\n${pts}\n</trkseg></trk></gpx>`;
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([gpx], { type: 'application/gpx+xml' }));
   a.download = `skytrace-${Date.now()}.gpx`;

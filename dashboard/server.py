@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-SkyTrace GCS — Yer kontrol istasyonu telemetri sunucusu.
+Uçuş Kontrol Paneli — Yer kontrol istasyonu telemetri sunucusu.
 MAVLink üzerinden SITL simülasyonu veya fiziksel uçuş kontrol kartına bağlanır.
 """
 import asyncio
@@ -475,7 +475,21 @@ async def sse_handler(request):
 
 
 async def index_handler(request):
-    return web.FileResponse(STATIC_DIR / "index.html")
+    response = web.FileResponse(STATIC_DIR / "index.html")
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+
+
+@web.middleware
+async def no_cache_middleware(request, handler):
+    response = await handler(request)
+    if request.path.startswith("/static/"):
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+    return response
 
 
 async def on_startup(app):
@@ -488,13 +502,13 @@ def main():
     if not STATIC_DIR.exists():
         print(f"Static klasör yok: {STATIC_DIR}")
         sys.exit(1)
-    app = web.Application()
+    app = web.Application(middlewares=[no_cache_middleware])
     app.router.add_get("/", index_handler)
     app.router.add_get("/events", sse_handler)
     app.router.add_static("/static/", STATIC_DIR)
     app.on_startup.append(on_startup)
     port = int(os.environ.get("GCS_PORT", os.environ.get("LOP_PORT", "8080")))
-    print(f"\n  SkyTrace GCS → http://localhost:{port}\n")
+    print(f"\n  Uçuş Kontrol Paneli → http://localhost:{port}\n")
     web.run_app(app, host="0.0.0.0", port=port, print=lambda x: None)
 
 

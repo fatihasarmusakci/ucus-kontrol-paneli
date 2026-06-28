@@ -1,6 +1,6 @@
 # SkyTrace — Sistem Mimarisi
 
-Bu belge, u-u-kontrol-paneli projesinin yazılım mimarisini özetler.
+Bu belge, Uçuş Kontrol Paneli projesinin yazılım mimarisini özetler.
 
 ## Genel Bakış
 
@@ -8,7 +8,7 @@ Sistem üç ana katmandan oluşur:
 
 1. **Gömülü katman** — ArduPilot tabanlı uçuş kontrol yazılımı (SITL veya fiziksel STM32 kart)
 2. **Köprü katmanı** — Python telemetri sunucusu; MAVLink mesajlarını JSON/SSE formatına dönüştürür
-3. **Sunum katmanı** — SkyTrace web arayüzü; operatöre harita, attitude ve sistem durumunu sunar
+3. **Sunum katmanı** — Web kontrol paneli; operatöre harita, attitude ve sistem durumunu sunar
 
 ## Haberleşme Akışı
 

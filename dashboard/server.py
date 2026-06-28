@@ -22,7 +22,17 @@ except ImportError:
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 STATIC_DIR = Path(__file__).resolve().parent / "static"
-SITL_BIN = PROJECT_ROOT / "ardupilot" / "build" / "sitl" / "bin" / "arducopter"
+
+
+def _ardupilot_dir() -> Path:
+    env = os.environ.get("ARDUPILOT_DIR")
+    if env:
+        return Path(env)
+    return Path(os.path.realpath(PROJECT_ROOT / "ardupilot"))
+
+
+ARDUPILOT_DIR = _ardupilot_dir()
+SITL_BIN = ARDUPILOT_DIR / "build" / "sitl" / "bin" / "arducopter"
 
 HOME_LAT = 41.0082
 HOME_LON = 28.9784
@@ -280,7 +290,7 @@ def start_sitl():
     ]
     sitl_proc = subprocess.Popen(
         cmd,
-        cwd=str(PROJECT_ROOT / "ardupilot"),
+        cwd=str(ARDUPILOT_DIR),
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )

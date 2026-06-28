@@ -2,7 +2,7 @@
 ardupilot/build/
 ardupilot/.lock-*
 
-# ARM toolchain (setup-env.sh ile indirilir)
+# ARM toolchain (setup-env.sh ile indirilir, repoda tutulmaz)
 tools/
 
 # Python
@@ -11,6 +11,14 @@ __pycache__/
 *.pyc
 .env
 venv/
+
+# Dahili / kurum içi belgeler (repoya dahil edilmez)
+docs/TUBITAK*
+docs/SOFTWARE_ONLY*
+docs/LOP_FC*
+demo-toplanti/
+scripts/generate-ara-rapor.py
+scripts/run-demo-toplanti.sh
 
 # macOS
 .DS_Store

@@ -1,79 +1,103 @@
-# u-u-kontrol-paneli (UAV Control & Management Interface)
+# u-u-kontrol-paneli
 
-Bu proje; insansız hava araçları (İHA) ve otopilot sistemleri için gelişmiş, modüler ve yüksek performanslı bir kontrol, izleme ve yönetim paneli geliştirmeyi hedeflemektedir. Proje, sistem mimarisi olarak düşük seviyeli gömülü yazılım kontrolü ile kullanıcı arayüzü arasında köprü kuran kararlı bir altyapı sunmayı amaçlar.
+**SkyTrace GCS** — İnsansız hava araçları için web tabanlı yer kontrol istasyonu ve telemetri arayüzü.
 
-## Temel Hedefler
+Bu projede, çok rotorlu İHA platformları için uçtan uca bir kontrol ve izleme altyapısı geliştirdim. Amaç; otopilot ile operatör arasında düşük gecikmeli, güvenilir ve genişletilebilir bir haberleşme katmanı kurmak ve uçuş verilerini anlaşılır biçimde görselleştirmektir.
 
-- **Gelişmiş Telemetri ve Veri Görselleştirme:** Hava aracından gelen anlık sensör, konum ve sistem durum verilerini gecikmesiz işleyerek kullanıcıya aktarmak.
-- **Modüler Kontrol Altyapısı:** Farklı otopilot yazılımları ve donanımları ile kolayca entegre olabilecek esnek bir kod mimarisi inşa etmek.
-- **Görev Planlama ve Simülasyon:** Araç sahaya çıkmadan önce uçuş senaryolarını test edebilmeyi sağlayan simülasyon ve rota optimizasyon araçları sunmak.
+## Projenin Amacı
 
-## Teknik Mimari
+İHA sistemlerinde sahaya çıkmadan önce senaryoların test edilebilmesi, uçuş sırasında anlık durumun izlenebilmesi ve gömülü donanımla yer istasyonu arasında tutarlı bir veri akışının sağlanması kritik öneme sahiptir. Bu çalışmada şu ihtiyaçlara odaklandım:
 
-### 1. Otopilot Entegrasyonu ve Haberleşme
+- **Canlı telemetri:** Konum, attitude, batarya, GPS kalitesi ve sistem durumunun tek ekranda takibi
+- **Simülasyon desteği:** ArduPilot SITL ile donanım olmadan uçuş öncesi doğrulama
+- **Özgün uçuş kontrol kartı:** STM32F405 tabanlı kart için ArduPilot portu ve firmware derleme hattı
+- **Enerji izleme:** Uçuş sırasında güç tüketimi ve geri kazanım verilerinin kaydı ve görselleştirilmesi
 
-- Proje, **ArduPilot** ekosistemi ile tam uyumlu çalışacak şekilde tasarlanmaktadır.
-- Araç ile yer istasyonu arasındaki veri akışı **MAVLink** protokolü üzerinden kurgulanmaktadır.
-- Web tabanlı kontrol paneli (`dashboard/`) SITL simülasyonu veya gerçek donanıma bağlanabilir.
+## Sistem Mimarisi
 
-### 2. Çapraz Derleme (Cross-Compilation) Altyapısı
+```
+┌─────────────────────────────────────────────────────────┐
+│              SkyTrace GCS (Web Arayüzü)                 │
+│         Harita · Attitude · Batarya · Enerji            │
+└────────────────────────┬────────────────────────────────┘
+                         │ MAVLink (UDP / SSE)
+┌────────────────────────▼────────────────────────────────┐
+│           Telemetri Sunucusu (Python / aiohttp)         │
+└────────────────────────┬────────────────────────────────┘
+                         │
+         ┌───────────────┴───────────────┐
+         ▼                               ▼
+┌─────────────────┐             ┌─────────────────┐
+│  ArduPilot SITL │             │  Fiziksel FC    │
+│   (Simülasyon)  │             │  (STM32F405)    │
+└─────────────────┘             └─────────────────┘
+```
 
-- Gömülü bileşenler için **ARM Cortex-M** hedefli `gcc-arm-none-eabi` araç zinciri kullanılır.
-- Derleyici ilk kurulumda `scripts/setup-env.sh` ile otomatik indirilir (repoya dahil değildir).
+### Kullandığım Teknolojiler
 
-### 3. Sinyal İşleme ve Filtreleme
-
-- Sensör verilerinin anlamlandırılması ve kararlı yönelim bilgisi için EKF tabanlı tahminleme ve filtreleme yöntemleri mimariye entegre edilmektedir.
-- `AP_EnergyRecovery` modülü enerji geri kazanım algoritmalarını içerir.
+| Katman | Teknoloji |
+|--------|-----------|
+| Otopilot | ArduPilot (ArduCopter) |
+| Haberleşme | MAVLink 2 |
+| Yer istasyonu | Python 3, aiohttp, pymavlink |
+| Arayüz | HTML5, Leaflet, Server-Sent Events |
+| Gömülü hedef | ARM Cortex-M4, gcc-arm-none-eabi |
+| Simülasyon | ArduPilot SITL |
 
 ## Proje Yapısı
 
 ```
 u-u-kontrol-paneli/
-├── dashboard/          # Web kontrol paneli (Python + aiohttp)
-├── scripts/            # Kurulum, derleme ve çalıştırma betikleri
-├── docs/               # Dokümantasyon ve yol haritası
-├── ardupilot/          # ArduPilot fork (LOP-FC hwdef, SITL)
-└── demo-toplanti/      # Demo materyalleri
+├── dashboard/       # SkyTrace web arayüzü ve telemetri sunucusu
+├── scripts/         # Kurulum, derleme ve çalıştırma betikleri
+├── docs/            # Mimari ve geliştirme notları
+└── ardupilot/       # ArduPilot kaynak ağacı (SITL + özel kart tanımı)
 ```
 
-## Geliştirme Ortamının Hazırlanması
+## Kurulum
 
 ### Gereksinimler
 
 - macOS veya Linux
-- Python 3.10+
-- pyenv (önerilir)
+- Python 3.10 veya üzeri
 - Git
+- pyenv (önerilir)
 
-### Kurulum
+### Adımlar
 
 ```bash
 git clone https://github.com/fatihasarmusakci/u-u-kontrol-paneli.git
 cd u-u-kontrol-paneli
 
-# Ortam kurulumu + SITL derlemesi (ilk sefer ~2 dk)
+# Bağımlılıklar + SITL derlemesi (ilk çalıştırmada birkaç dakika sürebilir)
 bash scripts/setup-env.sh
 ```
 
-### Kontrol Panelini Çalıştırma
+## Çalıştırma
+
+### Kontrol paneli (önerilen)
 
 ```bash
 bash scripts/start-panel.sh
 ```
 
-Tarayıcıda panel adresi: **http://localhost:8080**
+Tarayıcıda açılır: **http://localhost:8080**
 
-Panel; SITL simülasyonunu başlatır, MAVLink telemetrisini okur ve uçuş verilerini canlı gösterir.
+Bu komut SITL simülasyonunu başlatır, MAVLink bağlantısını kurar ve SkyTrace arayüzünü ayağa kaldırır.
 
-### Diğer Komutlar
+### Yalnızca simülasyon
 
 ```bash
-# Sadece SITL (Mission Planner / QGC: UDP 14550)
 bash scripts/run-sitl.sh
+```
 
-# LOP-FC firmware derleme
-bash scripts/build-lop-fc.sh
+Harici GCS bağlantısı: **UDP 14550** (Mission Planner, QGroundControl)
+
+### Firmware derleme
+
+```bash
+bash scripts/build-firmware.sh      # Uçuş kontrol kartı firmware
+bash scripts/build-bootloader.sh    # Bootloader
 ```
 
 ## Python Bağımlılıkları
@@ -82,9 +106,28 @@ bash scripts/build-lop-fc.sh
 pip install -r dashboard/requirements.txt
 ```
 
-- `pymavlink` — MAVLink haberleşmesi
-- `aiohttp` — Web sunucusu ve WebSocket
+- `pymavlink` — MAVLink protokol ayrıştırıcısı
+- `aiohttp` — HTTP sunucusu ve SSE akışı
+
+## Özellikler
+
+- Taktik harita (uydu / sokak katmanı) ve uçuş izi kaydı
+- GPX dışa aktarma
+- Uçuş öncesi kontrol listesi (GPS, EKF, batarya, bağlantı)
+- 3B araç attitude gösterimi ve pusula
+- Ana güç ve enerji geri kazanım paneli
+- Olay günlüğü ve bağlantı kalitesi göstergesi
+
+## Geliştirme Durumu
+
+| Bileşen | Durum |
+|---------|--------|
+| Web kontrol paneli (SkyTrace GCS) | Çalışır durumda |
+| SITL simülasyon entegrasyonu | Çalışır durumda |
+| MAVLink telemetri akışı | Çalışır durumda |
+| Özgün FC firmware derlemesi | Derlenebilir |
+| Fiziksel kart flash / saha testi | Donanım bağlı olduğunda |
 
 ## Lisans
 
-Bu proje ArduPilot ekosistemi üzerine inşa edilmiştir. ArduPilot GPL-3.0 lisansı altındadır.
+ArduPilot bileşenleri GPL-3.0 lisansı altındadır. Bu depo ArduPilot ekosistemi üzerine inşa edilmiştir.

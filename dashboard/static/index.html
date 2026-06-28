@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SkyTrace GCS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header class="gcs-header">
+    <div class="brand-block">
+      <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true">
+        <circle cx="20" cy="20" r="18" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3"/>
+        <path d="M8 28 Q20 8 32 28" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="20" cy="20" r="3" fill="#38bdf8"/>
+        <line x1="20" y1="20" x2="10" y2="10" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/>
+        <line x1="20" y1="20" x2="30" y2="10" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/>
+        <line x1="20" y1="20" x2="10" y2="30" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/>
+        <line x1="20" y1="20" x2="30" y2="30" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <div>
+        <h1>SkyTrace</h1>
+        <span class="brand-tag">Ground Control Station</span>
+      </div>
+    </div>
+
+    <div class="sys-badges">
+      <div class="sys-badge" id="badgeGps"><span class="badge-dot"></span><span id="badgeGpsText">GPS —</span></div>
+      <div class="sys-badge" id="badgeEkf"><span class="badge-dot"></span><span id="badgeEkfText">EKF —</span></div>
+      <div class="sys-badge" id="badgeBatt"><span class="badge-dot"></span><span id="badgeBattText">BAT —</span></div>
+    </div>
+
+    <div class="header-telemetry">
+      <div class="link-quality" title="Link kalitesi">
+        <span class="lq-label">LINK</span>
+        <div class="lq-bars" id="linkBars">
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+      </div>
+      <div class="hdr-stat"><label>Msg/s</label><span id="linkChip">—</span></div>
+      <div class="hdr-stat"><label>Gecikme</label><span id="linkLatency">—</span></div>
+      <div class="hdr-stat"><label>Oturum</label><span id="uptimeChip">00:00:00</span></div>
+      <div class="status-pill" id="connStatus"><span class="dot pulse"></span> Bağlanıyor…</div>
+    </div>
+  </header>
+
+  <div class="status-strip" id="flightSourceBar">
+    <span class="strip-tag" id="flightSourceTag">STANDBY</span>
+    <span class="strip-text" id="flightSourceText">Telemetri bekleniyor…</span>
+    <span class="strip-mode" id="stripMode">—</span>
+    <span class="strip-arm" id="stripArm">—</span>
+  </div>
+
+  <main class="layout">
+    <section class="map-panel card">
+      <div class="panel-head">
+        <h2>Taktik Harita</h2>
+        <div class="map-tools">
+          <div class="layer-toggle">
+            <button type="button" class="tool-btn active" data-layer="satellite">Uydu</button>
+            <button type="button" class="tool-btn" data-layer="street">Sokak</button>
+          </div>
+          <button type="button" id="btnCenter" class="tool-btn">Takip</button>
+          <button type="button" id="btnClearTrack" class="tool-btn">İz Sil</button>
+          <button type="button" id="btnExportGpx" class="tool-btn">GPX</button>
+          <button type="button" id="btnFullscreen" class="tool-btn">Tam Ekran</button>
+        </div>
+      </div>
+      <div class="map-wrap" id="mapWrap">
+        <div id="map"></div>
+        <div class="map-instruments">
+          <div class="mini-adi" id="miniAdi">
+            <div class="adi-inner" id="adiInner">
+              <div class="adi-sky"></div>
+              <div class="adi-ground"></div>
+              <div class="adi-ladder"></div>
+            </div>
+            <div class="adi-aircraft">▬</div>
+            <div class="adi-ring"></div>
+          </div>
+        </div>
+        <div class="map-offline-veil" id="mapVeil">
+          <div class="veil-content">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            <strong>Telemetri Bekleniyor</strong>
+            <span>MAVLink bağlantısı kurulunca harita canlanır</span>
+          </div>
+        </div>
+        <div class="hud-strip">
+          <div class="hud-item mode-hud"><label>MOD</label><span id="hudMode">—</span></div>
+          <div class="hud-item"><label>ARM</label><span id="hudArmed">—</span></div>
+          <div class="hud-item"><label>AGL</label><span id="hudRelAlt">—</span></div>
+          <div class="hud-item"><label>GS</label><span id="hudSpeed">—</span></div>
+          <div class="hud-item"><label>V/S</label><span id="hudClimb">—</span></div>
+          <div class="hud-item"><label>HDG</label><span id="hudHdg">—</span></div>
+          <div class="hud-item"><label>HOME</label><span id="hudHomeDist">—</span></div>
+          <div class="hud-item"><label>FLT</label><span id="hudFlightTime">—</span></div>
+        </div>
+      </div>
+      <div class="telemetry-grid">
+        <div class="tel-cell"><label>Enlem</label><span id="lat" class="mono">—</span></div>
+        <div class="tel-cell"><label>Boylam</label><span id="lon" class="mono">—</span></div>
+        <div class="tel-cell"><label>GPS</label><span id="gpsQuality">—</span></div>
+        <div class="tel-cell"><label>Uydu</label><span id="sats" class="mono">—</span></div>
+        <div class="tel-cell"><label>Doğruluk</label><span id="gpsAcc" class="mono">—</span></div>
+        <div class="tel-cell"><label>Home Δ</label><span id="homeDist" class="mono">—</span></div>
+        <div class="tel-cell"><label>Home ψ</label><span id="homeBrg" class="mono">—</span></div>
+        <div class="tel-cell"><label>İz Noktası</label><span id="trackCount" class="mono">0</span></div>
+      </div>
+    </section>
+
+    <aside class="sidebar" id="sidebar">
+      <section class="card preflight-card">
+        <div class="card-head">
+          <h2>Uçuş Öncesi</h2>
+          <span class="preflight-score" id="preflightScore">0/5</span>
+        </div>
+        <ul class="checklist" id="preflight"></ul>
+        <div class="ready-banner" id="readyBanner">Kontrol ediliyor…</div>
+      </section>
+
+      <section class="card vehicle-card" id="vehicleCard">
+        <h2>Araç Attitude</h2>
+        <div class="vehicle-scene">
+          <div class="compass-dial" id="compassDial">
+            <span class="compass-mark n">N</span>
+            <span class="compass-mark e">E</span>
+            <span class="compass-mark s">S</span>
+            <span class="compass-mark w">W</span>
+            <div class="compass-heading">▲</div>
+            <span class="heading-readout mono" id="headingReadout">—°</span>
+          </div>
+          <div class="vehicle-stage">
+            <div class="vehicle-pivot" id="vehiclePivot">
+              <div class="quad-3d" id="quad3d">
+                <div class="quad-arm fl"><span class="prop"></span></div>
+                <div class="quad-arm fr"><span class="prop"></span></div>
+                <div class="quad-arm bl"><span class="prop"></span></div>
+                <div class="quad-arm br"><span class="prop"></span></div>
+                <div class="quad-hub"></div>
+                <div class="quad-nose"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="attitude-row">
+          <div class="att-item"><label>Roll</label><span class="mono" id="roll">—</span></div>
+          <div class="att-item"><label>Pitch</label><span class="mono" id="pitch">—</span></div>
+          <div class="att-item"><label>Yaw</label><span class="mono" id="yaw">—</span></div>
+        </div>
+        <div class="metrics vehicle-metrics">
+          <div class="metric"><label>MSL</label><span id="alt" class="val mono">—</span></div>
+          <div class="metric"><label>AGL</label><span id="relAlt" class="val mono">—</span></div>
+          <div class="metric"><label>GS</label><span id="speed" class="val mono">—</span></div>
+          <div class="metric"><label>V/S</label><span id="climb" class="val mono">—</span></div>
+          <div class="metric"><label>Mod</label><span id="mode" class="val accent">—</span></div>
+          <div class="metric"><label>Uçuş</label><span id="flightTime" class="val mono">—</span></div>
+        </div>
+      </section>
+
+      <section class="card power-card">
+        <h2>Ana Güç</h2>
+        <div class="power-row">
+          <div class="power-gauge">
+            <svg viewBox="0 0 36 36"><path class="gauge-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/><path class="gauge-fill" id="battGauge" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/></svg>
+            <span class="gauge-pct mono" id="battPct">—</span>
+          </div>
+          <div class="metrics compact">
+            <div class="metric"><label>Voltaj</label><span id="batteryV" class="val mono">—</span></div>
+            <div class="metric"><label>Akım</label><span id="batteryA" class="val mono">—</span></div>
+            <div class="metric"><label>Güç</label><span id="flightPowerMain" class="val mono">—</span></div>
+            <div class="metric"><label>Durum</label><span id="armed" class="val">—</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card recovery-card" id="recoveryCard">
+        <div class="panel-head compact">
+          <h2>Enerji Geri Kazanım</h2>
+          <span class="module-status" id="recoveryStatus">Veri Yok</span>
+        </div>
+        <p class="energy-source-note" id="energySourceNote">Modül verisi bekleniyor.</p>
+        <div class="recovery-hero">
+          <div class="recovered-total">
+            <span class="recovered-value mono" id="recoveredWh">—</span>
+            <span class="recovered-unit">Wh kazanıldı</span>
+          </div>
+          <div class="efficiency-ring-wrap">
+            <svg class="efficiency-ring" viewBox="0 0 80 80">
+              <circle class="ring-bg" cx="40" cy="40" r="34"/>
+              <circle class="ring-fill" id="efficiencyRing" cx="40" cy="40" r="34"/>
+            </svg>
+            <div class="efficiency-label">
+              <span class="mono" id="efficiencyPct">—</span><small>%</small>
+              <em>verim</em>
+            </div>
+          </div>
+        </div>
+        <div class="recovery-flow" id="recoveryFlow">
+          <svg viewBox="0 0 340 88" class="flow-svg" aria-hidden="true">
+            <defs>
+              <linearGradient id="flowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#38bdf8"/>
+                <stop offset="50%" stop-color="#22c55e"/>
+                <stop offset="100%" stop-color="#4ade80"/>
+              </linearGradient>
+            </defs>
+            <rect class="flow-node" x="4" y="24" width="88" height="40" rx="6"/>
+            <text class="flow-label" x="48" y="42">Rüzgar</text>
+            <text class="flow-sublabel" x="48" y="56" id="flowWind">—</text>
+            <path class="flow-path" d="M 96 44 H 128"/>
+            <path class="flow-path" d="M 212 44 H 244"/>
+            <rect class="flow-node accent" x="132" y="18" width="76" height="52" rx="6"/>
+            <text class="flow-label" x="170" y="40">EREC</text>
+            <text class="flow-sublabel" x="170" y="56" id="flowPower">—</text>
+            <rect class="flow-node battery" x="248" y="24" width="88" height="40" rx="6"/>
+            <text class="flow-label" x="292" y="42">Batarya</text>
+            <text class="flow-sublabel" x="292" y="56" id="flowBatt">—</text>
+            <circle class="flow-particle p1" r="4" cy="44" cx="100"/>
+            <circle class="flow-particle p2" r="4" cy="44" cx="100"/>
+            <circle class="flow-particle p3" r="4" cy="44" cx="216"/>
+            <circle class="flow-particle p4" r="4" cy="44" cx="216"/>
+          </svg>
+        </div>
+        <div class="recovery-balance">
+          <div class="balance-item consume">
+            <label>Tüketim</label>
+            <span class="mono" id="flightPower">—</span>
+          </div>
+          <div class="balance-arrow">→</div>
+          <div class="balance-item recover">
+            <label>Kazanım</label>
+            <span class="mono" id="recoverPower">—</span>
+          </div>
+        </div>
+        <div class="energy-grid compact">
+          <div class="energy-stat"><span class="mono" id="eV">—</span><label>V</label></div>
+          <div class="energy-stat"><span class="mono" id="eA">—</span><label>A</label></div>
+          <div class="energy-stat"><span class="mono" id="eMah">—</span><label>mAh</label></div>
+          <div class="energy-stat"><span id="eCharge">—</span><label>Durum</label></div>
+        </div>
+        <canvas id="energyChart" height="40" width="320"></canvas>
+        <p class="module-note">Enerji modülü · MAVLink</p>
+      </section>
+
+      <section class="card log-card">
+        <h2>Olay Günlüğü</h2>
+        <ul id="events"></ul>
+      </section>
+    </aside>
+  </main>
+
+  <footer class="gcs-footer">
+    <span>SkyTrace GCS v1.0</span>
+    <span class="sep">·</span>
+    <span>STM32F405 · ArduPilot</span>
+    <span class="sep">·</span>
+    <span>MAVLink 2</span>
+  </footer>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>

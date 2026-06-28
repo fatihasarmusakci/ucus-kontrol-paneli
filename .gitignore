@@ -1,0 +1,21 @@
+# Derleme çıktıları
+ardupilot/build/
+ardupilot/.lock-*
+
+# ARM toolchain (setup-env.sh ile indirilir)
+tools/
+
+# Python
+.pydeps/
+__pycache__/
+*.pyc
+.env
+venv/
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp

@@ -1,0 +1,87 @@
+# LÖP FC — Production varsayılan parametreler
+# Doğuş Üniversitesi · Özgün Uçuş Kontrol Kartı
+
+# ============================================================================
+# Uçuş kontrol döngüsü — HIGHEST_PRIORITY (400 Hz)
+# ============================================================================
+SCHED_LOOP_RATE 400
+INS_GYRO_RATE 0
+INS_ACCEL_RATE 0
+
+# ============================================================================
+# ESC / PWM — 50–400 Hz dinamik (MOT_PWM_TYPE ile DShot seçilebilir)
+# ============================================================================
+MOT_PWM_TYPE 0
+MOT_PWM_RATE 400
+MOT_PWM_MIN 1000
+MOT_PWM_MAX 2000
+FRAME_CLASS 1
+FRAME_TYPE 1
+
+# ============================================================================
+# Seri port protokolleri — USART1=MAVLink, USART2=GPS
+# ============================================================================
+SERIAL1_PROTOCOL 2
+SERIAL1_BAUD 57
+SERIAL2_PROTOCOL 5
+SERIAL2_BAUD 115
+SERIAL3_PROTOCOL 2
+SERIAL3_BAUD 57
+SERIAL4_PROTOCOL 23
+
+# ============================================================================
+# LIDAR — I2C (NORMAL_PRIORITY sürücü)
+# ============================================================================
+RNGFND1_TYPE 7
+RNGFND1_ADDR 0
+RNGFND1_MAX_CM 1200
+RNGFND1_MIN_CM 30
+RNGFND1_ORIENT 25
+
+# ============================================================================
+# Termal sensör — I2C (NORMAL_PRIORITY)
+# ============================================================================
+TEMP1_TYPE 5
+TEMP1_SOURCE 1
+TEMP1_BUS 0
+TEMP1_ADDR 90
+
+# ============================================================================
+# EKF3 sensör füzyonu
+# ============================================================================
+EK3_ENABLE 1
+EK3_SRC1_POSXY 3
+EK3_SRC1_VELXY 3
+EK3_SRC1_POSZ 1
+EK3_SRC1_VELZ 3
+EK3_SRC1_YAW 1
+RNGFND1_POS 0
+
+# ============================================================================
+# Enerji geri kazanım modülü — LOW_PRIORITY
+# ============================================================================
+EREC_ENABLE 1
+EREC_VOLT_PIN 12
+EREC_CURR_PIN 13
+EREC_VOLT_MULT 11.0
+EREC_CURR_MULT 17.0
+EREC_MAX_VOLT 16.8
+EREC_MAX_CURR 2.0
+EREC_CUTOFF_PIN 81
+EREC_LOG_RATE 10
+
+# ============================================================================
+# Kara kutu logging — IMU @400Hz, GPS, LIDAR, enerji
+# ============================================================================
+LOG_BITMASK 176126
+LOG_DISARMED 1
+LOG_FILE_DSRMROT 1
+
+# ============================================================================
+# Fail-safe
+# ============================================================================
+FS_THR_ENABLE 1
+FS_THR_VALUE 975
+FS_BATT_ENABLE 1
+FS_BATT_VOLTAGE 10.5
+FS_EKF_ACTION 1

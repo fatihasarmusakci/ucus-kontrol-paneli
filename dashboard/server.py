@@ -517,7 +517,7 @@ def main():
     app.router.add_get("/events", sse_handler)
     app.router.add_static("/static/", STATIC_DIR)
     app.on_startup.append(on_startup)
-    port = int(os.environ.get("GCS_PORT", os.environ.get("LOP_PORT", "8080")))
+    port = int(os.environ.get("GCS_PORT", "8080"))
     print(f"\n  Uçuş Kontrol Paneli → http://localhost:{port}\n")
     web.run_app(app, host="0.0.0.0", port=port, print=lambda x: None)
 

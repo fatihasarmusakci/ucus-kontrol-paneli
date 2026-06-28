@@ -1,0 +1,206 @@
+# =============================================================================
+# LÖP-FC Production Hardware Definition Layer (HDL)
+# Doğuş Üniversitesi — Özgün İHA Uçuş Kontrol Kartı
+# =============================================================================
+#
+# ┌─────────────────────────────────────────────────────────────────────────┐
+# │  MOD: SOFTWARE_ONLY  (Donanım TBD — referans pin haritası)              │
+# ├─────────────────────────────────────────────────────────────────────────┤
+# │  Bu dosyadaki TÜM pin/sensör atamaları PLACEHOLDER'dır.                 │
+# │  PCB şeması ve sensör modelleri netleşene kadar yazılım geliştirmesi   │
+# │  SITL + simülasyon ile devam eder; fiziksel doğrulama bekler.            │
+# │                                                                         │
+# │  DONANIM GELİNCE YAPILACAKLAR (tahmini 1–2 hafta):                     │
+# │    [ ] PCB pinout → bu dosyayı revize et (hwdef.dat v2.0)               │
+# │    [ ] Sensör chip seçimi → IMU/BARO/COMPASS/LIDAR/termal satırları    │
+# │    [ ] defaults.parm → SERIAL/RNGFND/TEMP parametreleri                 │
+# │    [ ] ADC kalibrasyon → EREC_VOLT_MULT, EREC_CURR_MULT (bench)        │
+# │    [ ] Bootloader + firmware flash (ST-Link)                            │
+# │    [ ] Bench test → saha / HITL                                         │
+# │                                                                         │
+# │  DONANIM OLMADAN ŞİMDİ YAPILABİLİR:                                     │
+# │    [x] SITL derleme ve simülasyon                                       │
+# │    [x] Web kontrol paneli (scripts/start-panel.sh)                      │
+# │    [x] AP_EnergyRecovery + MAVLink 227 + LOG_EREC                       │
+# │    [x] LOP-FC firmware derlemesi (flash boyutuna sığdı)                 │
+# │    [ ] SITL fail-safe senaryoları                                       │
+# │    [ ] TÜBİTAK ara rapor / demo hazırlığı                               │
+# │                                                                         │
+# │  Detaylı checklist: docs/SOFTWARE_ONLY_CHECKLIST.md                     │
+# └─────────────────────────────────────────────────────────────────────────┘
+#
+# Bus topolojisi (mimari spesifikasyon — pinler TBD):
+#   SPI1  → Dahili IMU / sensör füzyonu birimi
+#   I2C1  → Harici LIDAR, termal sensör, barometre, manyetometre
+#   USART1 → Telemetri / MAVLink v2
+#   USART2 → GPS / GNSS
+#   TIM3/4 → ESC PWM / DShot (50–400 Hz dinamik)
+#   ADC1  → Enerji geri kazanım + batarya izleme
+# =============================================================================
+
+MCU STM32F4xx STM32F405xx
+APJ_BOARD_ID AP_HW_LOP_FC
+OSCILLATOR_HZ 8000000
+
+define STM32_ST_USE_TIMER 5
+define CH_CFG_ST_RESOLUTION 16
+
+FLASH_SIZE_KB 1024
+FLASH_RESERVE_START_KB 48
+define HAL_STORAGE_SIZE 16384
+define STORAGE_FLASH_PAGE 1
+
+# --- Seri port sırası: USB, MAVLink(USART1), GPS(USART2), RC, Yedek ---
+SERIAL_ORDER OTG1 USART1 USART2 UART4 USART3
+
+# ============================================================================
+# USB CDC — yer istasyonu / firmware yükleme
+# ============================================================================
+PA11 OTG_FS_DM OTG1
+PA12 OTG_FS_DP OTG1
+
+# ============================================================================
+# SWD — ST-Link debug / programlama arayüzü
+# ============================================================================
+PA13 JTMS-SWDIO SWD
+PA14 JTCK-SWCLK SWD
+
+# ============================================================================
+# SPI1 — Dahili IMU (Invensensev3 / ICM-42688-P placeholder)
+# Yüksek öncelikli sensör füzyonu veri yolu; DMA ile servis edilir.
+# ============================================================================
+PA5 SPI1_SCK SPI1
+PA6 SPI1_MISO SPI1
+PA7 SPI1_MOSI SPI1
+PA4 IMU1_CS CS
+PC8 IMU1_DRDY INPUT
+
+SPIDEV imu1 SPI1 DEVID1 IMU1_CS MODE3 2*MHZ 8*MHZ
+IMU Invensensev3 SPI:imu1 ROTATION_NONE
+define HAL_DEFAULT_INS_FAST_SAMPLE 1
+
+# ============================================================================
+# SPI2 — Dahili DataFlash (kara kutu / black-box logging)
+# ============================================================================
+PB13 SPI2_SCK SPI2
+PB14 SPI2_MISO SPI2
+PB15 SPI2_MOSI SPI2
+PB12 FLASH1_CS CS
+
+SPIDEV dataflash SPI2 DEVID1 FLASH1_CS MODE3 104*MHZ 104*MHZ
+define HAL_LOGGING_DATAFLASH_ENABLED 1
+
+# ============================================================================
+# I2C1 — Harici algılama birimleri (NORMAL_PRIORITY sürücü katmanı)
+# LIDAR (I2C), termal sensör, barometre, manyetometre
+# ============================================================================
+PB8 I2C1_SCL I2C1
+PB9 I2C1_SDA I2C1
+I2C_ORDER I2C1
+
+BARO BMP388 I2C:0:0x76
+COMPASS QMC5883L I2C:0:0x0D false ROTATION_NONE
+
+define AP_COMPASS_PROBING_ENABLED 1
+define HAL_I2C_INTERNAL_MASK 0
+define HAL_COMPASS_AUTO_ROT_DEFAULT 2
+
+# ============================================================================
+# USART1 — Telemetri / MAVLink v2 (GCS haberleşme hattı)
+# ============================================================================
+PA9  USART1_TX USART1
+PA10 USART1_RX USART1
+define DEFAULT_SERIAL1_PROTOCOL SerialProtocol_MAVLink2
+
+# ============================================================================
+# USART2 — GPS / GNSS (UBX veya NMEA)
+# ============================================================================
+PD5 USART2_TX USART2
+PD6 USART2_RX USART2
+define DEFAULT_SERIAL2_PROTOCOL SerialProtocol_GPS
+
+# ============================================================================
+# UART4 — RC alıcı (SBUS / CRSF / PPM-SBUS)
+# ============================================================================
+PA1 UART4_RX UART4 NODMA
+define DEFAULT_SERIAL4_PROTOCOL SerialProtocol_RCIN
+
+# ============================================================================
+# USART3 — Yedek telemetri / ikincil MAVLink
+# ============================================================================
+PD8 USART3_TX USART3
+PD9 USART3_RX USART3
+define DEFAULT_SERIAL3_PROTOCOL SerialProtocol_MAVLink2
+
+# ============================================================================
+# PWM / DShot — Motor sürücü (ESC) çıkışları
+# MOT_PWM_RATE parametresi ile 50–400 Hz (PWM) veya DShot protokolü
+# ============================================================================
+PB6 TIM4_CH1 TIM4 PWM(1) GPIO(50) BIDIR
+PB7 TIM4_CH2 TIM4 PWM(2) GPIO(51) BIDIR
+PB0 TIM3_CH3 TIM3 PWM(3) GPIO(52) BIDIR
+PB1 TIM3_CH4 TIM3 PWM(4) GPIO(53) BIDIR
+
+define HAL_FRAME_TYPE_DEFAULT 1
+define AP_Lop_FC_PRODUCTION 1
+
+# ============================================================================
+# ADC1 — Batarya + Enerji Geri Kazanım analog ölçüm kanalları
+# ============================================================================
+PC0 BATT_VOLTAGE_SENS ADC1 SCALE(1)
+PC1 BATT_CURRENT_SENS ADC1 SCALE(1)
+PC2 ENERGY_VOLT_SENS ADC1 SCALE(1)
+PC3 ENERGY_CURR_SENS ADC1 SCALE(1)
+PC5 RSSI_ADC ADC1 SCALE(1)
+
+define HAL_BATT_VOLT_PIN 10
+define HAL_BATT_CURR_PIN 11
+define HAL_BATT_VOLT_SCALE 11.0
+define HAL_BATT_CURR_SCALE 40.0
+define HAL_BATT_MONITOR_DEFAULT 4
+
+# Enerji geri kazanım modülü (AP_EnergyRecovery)
+define HAL_LOP_ENERGY_RECOVERY_ENABLED 1
+define HAL_LOP_ENERGY_VOLT_PIN 12
+define HAL_LOP_ENERGY_CURR_PIN 13
+define HAL_LOP_ENERGY_VOLT_SCALE 11.0
+define HAL_LOP_ENERGY_CURR_SCALE 17.0
+
+# Safe-Mode kesme hattı — şarj MOSFET / röle sürücü (LOW = şarj kapalı)
+PC4 ENERGY_CUTOFF OUTPUT LOW GPIO(81)
+define HAL_LOP_ENERGY_CUTOFF_PIN 81
+define HAL_LOP_ENERGY_CUTOFF_ACTIVE_HIGH 1
+
+# ============================================================================
+# Durum göstergeleri
+# ============================================================================
+PC13 LED0 OUTPUT LOW GPIO(90)
+define AP_NOTIFY_GPIO_LED_1_ENABLED 1
+define AP_NOTIFY_GPIO_LED_1_PIN 90
+PC15 BUZZER OUTPUT GPIO(80) LOW
+define HAL_BUZZER_PIN 80
+
+# ============================================================================
+# LÖP özel yazılım modülleri
+# ============================================================================
+define AP_TEMPERATURE_SENSOR_ENABLED 1
+define AP_TEMPERATURE_SENSOR_MLX90614_ENABLED 1
+define AP_RANGEFINDER_ENABLED 1
+define AP_RANGEFINDER_LWI2C_ENABLED 1
+define AP_RANGEFINDER_TRI2C_ENABLED 1
+
+# DMA öncelik: uçuş kontrol timer > SPI IMU > ADC enerji
+DMA_PRIORITY TIM4* TIM3* SPI1* ADC* I2C*
+
+define ALLOW_ARM_NO_COMPASS
+
+# Production scheduler, logging ve PWM yapılandırması
+include ../include/lop_fc_production.inc
+include ../include/minimize_features.inc
+
+# minimize_features sonrası LÖP modüllerini yeniden etkinleştir
+define AP_TEMPERATURE_SENSOR_ENABLED 1
+define AP_TEMPERATURE_SENSOR_MLX90614_ENABLED 1
+define HAL_LOP_ENERGY_RECOVERY_ENABLED 1
+define HAL_LOGGING_DATAFLASH_ENABLED 1
+define AP_RANGEFINDER_LWI2C_ENABLED 1

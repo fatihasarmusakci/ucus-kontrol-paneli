@@ -48,11 +48,14 @@ Bu projede çok rotorlu insansız hava araçları için uçtan uca bir kontrol v
 
 ```
 ucus-kontrol-paneli/
-├── dashboard/       # Web arayüzü ve telemetri sunucusu
-├── scripts/         # Kurulum, derleme ve çalıştırma betikleri
-├── docs/            # Mimari ve geliştirme notları
-└── ardupilot/       # ArduPilot kaynak ağacı (SITL + özel kart tanımı)
+├── dashboard/          # Web arayüzü ve telemetri sunucusu
+├── firmware/overlay/   # Özgün FC firmware yamaları (repoda)
+├── scripts/            # Kurulum, derleme ve çalıştırma betikleri
+├── docs/               # Mimari belgesi
+└── ardupilot/          # Kurulumda otomatik indirilir (git'e dahil değil)
 ```
+
+> **Not:** Proje klasör adında Türkçe karakter varsa (`adsız klasör` gibi), ArduPilot otomatik olarak `~/.cache/ucus-kontrol-paneli/ardupilot` dizinine kurulur. ASCII isimli klasör önerilir: `ucus-kontrol-paneli`.
 
 ## Kurulum
 
@@ -125,7 +128,8 @@ pip install -r dashboard/requirements.txt
 | Web kontrol paneli | Çalışır durumda |
 | SITL simülasyon entegrasyonu | Çalışır durumda |
 | MAVLink telemetri akışı | Çalışır durumda |
-| Özgün FC firmware derlemesi | Derlenebilir |
+| Özgün FC firmware derlemesi | `firmware/overlay` ile derlenebilir |
+| Enerji geri kazanım telemetrisi | Özel firmware + pymavlink kurulumu sonrası |
 | Fiziksel kart flash / saha testi | Donanım bağlı olduğunda |
 
 ## Lisans

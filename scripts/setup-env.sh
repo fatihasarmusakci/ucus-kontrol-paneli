@@ -5,31 +5,44 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 source "$SCRIPT_DIR/ardupilot-path.sh"
-ARDUPILOT_DIR="$(resolve_ardupilot_dir "$PROJECT_ROOT")"
-TOOLCHAIN_DIR="$PROJECT_ROOT/tools/gcc-arm-none-eabi-10-2020-q4-major"
 
 export PATH="$HOME/.pyenv/shims:$HOME/.pyenv/bin:/opt/homebrew/bin:$PATH"
 
 echo "=== Uçuş Kontrol Paneli — Ortam Kurulumu ==="
+
+# ArduPilot hazırla
+ARDUPILOT_DIR="$(resolve_ardupilot_dir "$PROJECT_ROOT")"
+export ARDUPILOT_DIR
 echo "ArduPilot: $ARDUPILOT_DIR"
 
-if ! command -v pyenv &>/dev/null; then
-    echo "pyenv bulunamadı. Önce Python 3.10+ kurun."
-    exit 1
+if command -v pyenv &>/dev/null; then
+    pyenv global 3.10.18 2>/dev/null || true
 fi
 
-pyenv global 3.10.18 2>/dev/null || true
+python3 -m pip install -q -r "$PROJECT_ROOT/dashboard/requirements.txt"
+python3 -m pip install -q empy==3.3.4 pexpect future lxml
 
-python3 -m pip install -q empy==3.3.4 pexpect future lxml pymavlink
+# Özel MAVLink dialect ile pymavlink (enerji telemetrisi için)
+if [ -d "$ARDUPILOT_DIR/modules/mavlink/pymavlink" ]; then
+    python3 -m pip install -q -e "$ARDUPILOT_DIR/modules/mavlink/pymavlink"
+else
+    python3 -m pip install -q pymavlink
+fi
 
+TOOLCHAIN_DIR="$PROJECT_ROOT/tools/gcc-arm-none-eabi-10-2020-q4-major"
 if [ -d "$TOOLCHAIN_DIR/bin" ]; then
     export PATH="$TOOLCHAIN_DIR/bin:$PATH"
     echo "ARM toolchain: $TOOLCHAIN_DIR"
 else
     echo "ARM toolchain indiriliyor..."
     mkdir -p "$PROJECT_ROOT/tools"
-    curl -L -o /tmp/gcc-arm-none-eabi.tar.bz2 \
-        "https://firmware.ardupilot.org/Tools/STM32-tools/gcc-arm-none-eabi-10-2020-q4-major-mac.tar.bz2"
+    OS="$(uname -s)"
+    if [ "$OS" = "Darwin" ]; then
+        URL="https://firmware.ardupilot.org/Tools/STM32-tools/gcc-arm-none-eabi-10-2020-q4-major-mac.tar.bz2"
+    else
+        URL="https://firmware.ardupilot.org/Tools/STM32-tools/gcc-arm-none-eabi-10-2020-q4-major-x86_64-linux.tar.bz2"
+    fi
+    curl -L -o /tmp/gcc-arm-none-eabi.tar.bz2 "$URL"
     tar xjf /tmp/gcc-arm-none-eabi.tar.bz2 -C "$PROJECT_ROOT/tools"
     export PATH="$TOOLCHAIN_DIR/bin:$PATH"
 fi
@@ -37,9 +50,7 @@ fi
 arm-none-eabi-gcc --version | head -1
 
 cd "$ARDUPILOT_DIR"
-if [ -f .gitmodules ]; then
-    git submodule update --init --recursive
-fi
+git submodule update --init --recursive 2>/dev/null || true
 
 if [ -f build/sitl/bin/arducopter ]; then
     echo ""

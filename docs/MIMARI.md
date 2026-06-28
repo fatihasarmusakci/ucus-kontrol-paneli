@@ -1,4 +1,4 @@
-# SkyTrace — Sistem Mimarisi
+# Uçuş Kontrol Paneli — Sistem Mimarisi
 
 Bu belge, Uçuş Kontrol Paneli projesinin yazılım mimarisini özetler.
 

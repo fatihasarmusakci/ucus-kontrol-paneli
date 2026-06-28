@@ -4,7 +4,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-ARDUPILOT_DIR="$PROJECT_ROOT/ardupilot"
+source "$SCRIPT_DIR/ardupilot-path.sh"
+ARDUPILOT_DIR="$(resolve_ardupilot_dir "$PROJECT_ROOT")"
 
 export PATH="$HOME/.pyenv/shims:$HOME/.pyenv/bin:/opt/homebrew/bin:$PATH"
 
